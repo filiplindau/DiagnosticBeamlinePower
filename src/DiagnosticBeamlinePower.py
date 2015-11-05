@@ -19,12 +19,19 @@ hb = h / (2 * pi)
 
 B = 0.5
 E = 3e9 * qe
+I = 500e-3
 gamma = E / (me * c ** 2)
+
+# From http://photon-science.desy.de/sites/site_photonscience/content/e62/e189219/e187240/e187241/e187242/infoboxContent187244/f2_eng.pdf
 Ec = 1.5 * qe * hb * c ** 2 * B * E ** 2 / (me * c ** 2) ** 3
 # Ec = 665.0255 * B * (E * 1e-9 / qe) ** 2 * qe
 lc = h * c / Ec
+omegac = 2 * pi * c / lc
 
-l = linspace(200e-9, 1400e-6, 100e-9)
+l = linspace(200e-9, 1400e-9, 100)
+# l = logspace(-10, -6, 100)
+omega = flipud(2 * pi * c / l)
+l = flipud(l)
 
 # From Juan I. Larruquert, J. Opt. Soc. Am. A / Vol. 28, No. 11 / November 2011 / 2340
 # Self-consistent optical constants of SiC thin films
@@ -38,7 +45,9 @@ SiC_k = array([2.25, 1.25, 0.75, 0.5, 0.3, 0.25, 0.2, 0.15, 0.15, 0.15, 0.15, 0.
 SiC_R = ((SiC_n - 1) ** 2 + SiC_k ** 2) / ((SiC_n + 1) ** 2 + SiC_k ** 2)
 
 K = lambda x: kv(5 / 3.0, x)
-
-# From http://photon-science.desy.de/sites/site_photonscience/content/e62/e189219/e187240/e187241/e187242/infoboxContent187244/f2_eng.pdf
-
-# quad(K, omega, inf)
+dWdw = []
+for omegax in omega:
+    ostart = omegax / omegac
+    S = quad(K, ostart, inf)
+    dWdw.append(sqrt(3) * qe ** 2 / (4 * pi * eps0 * c) * gamma * omegax / omegac * S[0] * I / qe)
+dWdw = array(dWdw)
