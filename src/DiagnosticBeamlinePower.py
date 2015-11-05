@@ -20,6 +20,7 @@ hb = h / (2 * pi)
 B = 0.5
 E = 3e9 * qe
 I = 500e-3
+
 gamma = E / (me * c ** 2)
 
 # From http://photon-science.desy.de/sites/site_photonscience/content/e62/e189219/e187240/e187241/e187242/infoboxContent187244/f2_eng.pdf
@@ -29,9 +30,12 @@ lc = h * c / Ec
 omegac = 2 * pi * c / lc
 
 l = linspace(200e-9, 1400e-9, 100)
-# l = logspace(-10, -6, 100)
+#l = logspace(-10, -6, 100)
 omega = flipud(2 * pi * c / l)
 l = flipud(l)
+
+omega = linspace(2*pi*c/1.4e-6, 2*pi*c/0.2e-6, 100)
+l = 2*pi*c/omega
 
 # From Juan I. Larruquert, J. Opt. Soc. Am. A / Vol. 28, No. 11 / November 2011 / 2340
 # Self-consistent optical constants of SiC thin films
@@ -46,8 +50,23 @@ SiC_R = ((SiC_n - 1) ** 2 + SiC_k ** 2) / ((SiC_n + 1) ** 2 + SiC_k ** 2)
 
 K = lambda x: kv(5 / 3.0, x)
 dWdw = []
+G1 = []
 for omegax in omega:
     ostart = omegax / omegac
     S = quad(K, ostart, inf)
     dWdw.append(sqrt(3) * qe ** 2 / (4 * pi * eps0 * c) * gamma * omegax / omegac * S[0] * I / qe)
+    G1.append(ostart*S[0])
 dWdw = array(dWdw)
+G1 = array(G1)
+
+# Total visible power
+P = trapz(dWdw, omega)
+
+# Calculation from http://www.eecs.berkeley.edu/~attwood/srms/2007/Lec08.pdf
+d2Fdthdo = 2.46e13*E/qe/1e9*I*G1
+dth = 1/gamma
+Eph = h*omega/(2*pi)
+dPdw = d2Fdthdo*dth*1e3*Eph
+dww = gradient(omega)/omega/0.1e-2
+# Visible power:
+P2 = sum(dPdw*dww)
