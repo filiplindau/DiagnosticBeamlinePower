@@ -95,7 +95,8 @@ Al_UVenh_int = interp1d(Al_UVenh_l, Al_UVenh_R, fill_value=0.95, bounds_error=Fa
 # ON LIMITS OF EXPOSURE TO INCOHERENT VISIBLE
 # AND INFRARED RADIATION
 # PUBLISHED IN: HEALTH PHYSICS 105(1):74‐96; 2013
-retina = array([300, 6.00, 0.01, 0,
+retina = array([200, 6.0, 0.01, 0,
+300, 6.00, 0.01, 0,
 305, 6.00, 0.01, 0,
 310, 6.00, 0.01, 0,
 315, 6.00, 0.01, 0,
@@ -154,11 +155,17 @@ retina = array([300, 6.00, 0.01, 0,
 585, 0.002, 0.002, 1.0,
 590, 0.001, 0.001, 1.0,
 595, 0.001, 0.001, 1.0,
-600, 0.001, 0.001, 1.0])
-l_ret = arange(300, 1400, 5)  # Wavelengths for retinal response data
+600, 0.001, 0.001, 1.0,
+700, 0.001, 0.001, 1.0,
+1050, 0, 0, 1.0,
+1200, 0, 0, 0.2,
+1400, 0, 0, 0.02])
+l_ret = arange(300, 1400, 5) * 1e-9  # Wavelengths for retinal response data
+l_ret = retina[0::4] * 1e-9  # Wavelengths for retinal response data
 B_ret = retina[2::4]  # Blue light hazard function 
 th_ret = retina[3::4]  # Thermal hazard function
-
+B_int = interp1d(l_ret, B_ret, fill_value=0.0, bounds_error=False)
+th_int = interp1d(l_ret, th_ret, fill_value=0.0, bounds_error=False)
 
 ###########################################
 # Bending magnet calculations
@@ -188,6 +195,10 @@ dww = gradient(omega) / omega / 0.1e-2
 # Visible power:
 P2 = sum(dPdw * dww)
 
+# Acceptance angle of the beamline:
+d = 5e-2  # Aperture diameter
+R = 4  # Distance to aperture
+
 
 # From wikipedia, radiation integral
 # Looking at theta=0 (in the plane of the electrons)
@@ -197,11 +208,10 @@ K23 = lambda x: kv(2 / 3.0, x)
 theta = 0
 xi = rho * omega / (3 * c * gamma ** 3) * (1 + gamma ** 2 * theta ** 2) ** 1.5
 
+# Radiation power (scaled with ring current) per steradian and frequency interval:
 dWdodw = qe ** 2 / (16 * pi ** 3 * eps0 * c) * (2 * omega * rho / (3 * c * gamma ** 2)) ** 2 * (1 + gamma ** 2 * theta ** 2) ** 2 * (kv(2.0 / 3, xi) ** 2 + gamma ** 2 * theta ** 2 / (1 + gamma ** 2 * theta ** 2) * kv(1.0 / 3, xi) ** 2) * I / qe
-
-# Acceptance angle of the beamline:
-d = 5e-2  # Aperture diameter
-R = 5  # Distance to aperture
+# The solid angle at exposure over 1 cm**2 at a distance R is 1e-4/R**2
+dWdw_ret = dWdodw * 1e-4 / R ** 2
 
 # Assume 1/gamma angular beam in y dir (not correct)
 dOmega = 1 / gamma * d / R
